@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Meu app Java</title></head>
+<body style="font-family: sans-serif; background: #eef4ff; text-align: center">
+  <h1 id="msg">Carregando...</h1>
+  <p>Versão <span id="ver"></span></p>
+  <script>
+    fetch('/api/hello').then(r => r.json()).then(d => {
+      document.getElementById('msg').textContent = d.message;
+      document.getElementById('ver').textContent = d.version;
+    });
+  </script>
+</body>
+</html>

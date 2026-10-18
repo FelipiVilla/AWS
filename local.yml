@@ -1,0 +1,60 @@
+- name: Compilar e executar o app Java nesta máquina
+  hosts: localhost
+  connection: local
+  become: true
+  vars:
+    app_user: springapp
+    app_dir: /opt/webapp
+    app_version: "1.0.0"
+    src_dir: "{{ playbook_dir }}/app"
+
+  tasks:
+    - name: Criar o usuário do serviço
+      ansible.builtin.user:
+        name: "{{ app_user }}"
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Criar o diretório da aplicação
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: "0755"
+
+    - name: Compilar o JAR com o Maven
+      become: false
+      ansible.builtin.command: bash mvnw -q package -DskipTests
+      args:
+        chdir: "{{ src_dir }}"
+
+    - name: Instalar o JAR
+      ansible.builtin.copy:
+        src: "{{ src_dir }}/target/webapp-0.0.1-SNAPSHOT.jar"
+        dest: "{{ app_dir }}/webapp.jar"
+        remote_src: true
+        owner: "{{ app_user }}"
+        mode: "0644"
+      notify: Reiniciar webapp
+
+    - name: Instalar a unidade systemd
+      ansible.builtin.template:
+        src: templates/webapp.service.j2
+        dest: /etc/systemd/system/webapp.service
+        mode: "0644"
+      notify: Reiniciar webapp
+
+    - name: Habilitar e iniciar o serviço
+      ansible.builtin.systemd:
+        name: webapp
+        enabled: true
+        state: started
+        daemon_reload: true
+
+  handlers:
+    - name: Reiniciar webapp
+      ansible.builtin.systemd:
+        name: webapp
+        state: restarted
+        daemon_reload: true

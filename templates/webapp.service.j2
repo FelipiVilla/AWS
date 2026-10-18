@@ -1,0 +1,13 @@
+[Unit]
+Description=Java web app deployed by ansible-pull
+After=network.target
+
+[Service]
+User={{ app_user }}
+Environment=APP_VERSION={{ app_version }}
+ExecStart=/usr/bin/java -Xmx256m -jar {{ app_dir }}/webapp.jar
+SuccessExitStatus=143
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
